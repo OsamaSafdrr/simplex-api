@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: simplex-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nest_perf
+      MYSQL_USER: nest
+      MYSQL_PASSWORD: nest
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+
+
+  redis:
+    image: redis:7.0
+    container_name: simplex-redis
+    ports:
+      - '6379:6379'
+
+  app:
+    build: .
+    container_name: simplex-app
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: nest
+      DB_PASSWORD: nest
+      DB_NAME: nest_perf
+      REDIS_HOST: redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - '3000:3000'
+
+volumes:
+  mysql_data:
